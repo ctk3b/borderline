@@ -44,6 +44,8 @@ class ModuleImports:
 
     """
 
+    # The module you want to isolate.
+    # We assume that this module lives in a subdirectory of `external_modules`.
     module: str
     # The public API of the module.
     # External modules should only import from here.
@@ -62,6 +64,8 @@ class ModuleImports:
     # of grandfathered imports.
     record_grandfather = False
 
+    project_root: Path
+
     def _validate_config(self):
         for module in self.public_submodules:
             assert module.startswith(self.module), "Public submodules must actually be submodules."
@@ -71,11 +75,16 @@ class ModuleImports:
                 self.grandfather_filedir
             ), "Cannot use `record_grandfather=True` without defining `grandfather_filedir`."
 
+        # TODO: validate that multiple external paths do not violate directory structure assumptions
+
     def test_module(self):
         """
         Statically test whether the module imports respect the module boundary.
         """
         self._validate_config()
+        external_paths = [Path(sys.modules[mod].__path__[0]) for mod in self.external_modules]
+        external_paths.sort(key=lambda x: len(x.parts))
+        self.project_root = external_paths[0]
 
         def _get_grandfathered_file(violation_type: str) -> Path:
             self.grandfather_filedir.mkdir(parents=True, exist_ok=True)
@@ -93,11 +102,13 @@ class ModuleImports:
         # Check if the module imports external modules
         # that are not legitimate dependencies.
         grandfathered_violations = _get_grandfathered_violations(violation_type="internal")
+        module = sys.modules[self.module]
+        inside_paths = {path for path in Path(module.__path__[0]).rglob("*.py")}
         internal_violations = tuple(
             self._check_modules(
-                modules=(self.module,),
+                module_paths=inside_paths,
                 banned_modules=self.external_modules,
-                allowed_modules=self.external_dependencies,
+                allowed_modules=(self.module,) + self.external_dependencies,
                 grandfathered_violations=grandfathered_violations,
             )
         )
@@ -105,9 +116,13 @@ class ModuleImports:
         # Check if external modules import submodules
         # that are not part of the module's public API.
         grandfathered_violations = _get_grandfathered_violations(violation_type="external")
+        modules = {sys.modules[mod] for mod in self.external_modules}
+        outside_paths = {
+            path for module in modules for path in Path(module.__path__[0]).rglob("*.py")
+        } - inside_paths  # Do not check paths within the module we want to isolate.
         external_violations = tuple(
             self._check_modules(
-                modules=self.external_modules,
+                module_paths=outside_paths,
                 banned_modules=(self.module,),
                 allowed_modules=self.public_submodules,
                 grandfathered_violations=grandfathered_violations,
@@ -128,29 +143,21 @@ class ModuleImports:
 
     def _check_modules(
         self,
-        modules: Tuple[str],
+        module_paths: Set[Path],
         banned_modules: Tuple[str],
         allowed_modules: Tuple[str],
         grandfathered_violations: Set[str],
     ):
-        for module_path in modules:
-            module = sys.modules[module_path]
-            py_filepaths = [
-                path
-                for path in Path(module.__path__[0]).rglob("*.py")  # type:ignore[attr-defined]
-            ]
-            for py_filepath in py_filepaths:
-                yield from self._check_file(
-                    module,
-                    py_filepath,
-                    banned_modules,
-                    allowed_modules,
-                    grandfathered_violations,
-                )
+        for module_path in module_paths:
+            yield from self._check_file(
+                module_path,
+                banned_modules,
+                allowed_modules,
+                grandfathered_violations,
+            )
 
     def _check_file(
         self,
-        module: ModuleType,
         filepath: Path,
         banned_modules: Tuple[str],
         allowed_modules: Tuple[str],
@@ -163,7 +170,7 @@ class ModuleImports:
                 illegal_import = self._check_import(node, banned_modules, allowed_modules)
                 if illegal_import:
                     violation = Violation(
-                        location=f"{module.__name__}.{filepath.name}",
+                        location=f"{filepath.relative_to(self.project_root)}",
                         illegal_import=ast.dump(illegal_import),
                     )
                     if violation not in grandfathered_violations:

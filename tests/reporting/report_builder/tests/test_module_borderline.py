@@ -23,19 +23,17 @@ class TestReportBuilder(ModuleImports):
             super().test_module()
 
         expected_violations = {
-            (
-                Violation(
-                    location="reporting.report_builder.__init__.py",
-                    illegal_import="Import(names=[alias(name='reporting.review.this_is_a_violation', asname=None)])",
-                ),
-                Violation(
-                    location="reporting.report_builder.api.py",
-                    illegal_import="ImportFrom(module='reporting.review', names=[alias(name='this_is_a_violation', asname=None)], level=0)",
-                ),
-                Violation(
-                    location="reporting.review.api.py",
-                    illegal_import="Import(names=[alias(name='reporting.report_builder.this_is_a_violation', asname=None)])",
-                ),
+            Violation(
+                location="report_builder/__init__.py",
+                illegal_import="Import(names=[alias(name='reporting.review.this_is_a_violation', asname=None)])",
+            ),
+            Violation(
+                location="report_builder/api.py",
+                illegal_import="ImportFrom(module='reporting.review', names=[alias(name='this_is_a_violation', asname=None)], level=0)",
+            ),
+            Violation(
+                location="review/api.py",
+                illegal_import="Import(names=[alias(name='reporting.report_builder.this_is_a_violation', asname=None)])",
             ),
         }
-        assert set(violation.value.args) == expected_violations
+        assert set(violation.value.args[0]) == expected_violations

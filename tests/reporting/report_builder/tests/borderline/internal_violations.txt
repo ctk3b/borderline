@@ -1,2 +1,2 @@
-reporting.report_builder.__init__.py::Import(names=[alias(name='reporting.review.this_is_a_grandfathered_violation', asname=None)])
-reporting.report_builder.api.py::ImportFrom(module='reporting.review', names=[alias(name='this_is_a_grandfathered_violation', asname=None)], level=0)
+report_builder/__init__.py::Import(names=[alias(name='reporting.review.this_is_a_grandfathered_violation', asname=None)])
+report_builder/api.py::ImportFrom(module='reporting.review', names=[alias(name='this_is_a_grandfathered_violation', asname=None)], level=0)
