@@ -62,10 +62,20 @@ class ModuleImports:
     # of grandfathered imports.
     record_grandfather = False
 
+    def _validate_config(self):
+        for module in self.public_submodules:
+            assert module.startswith(self.module), "Public submodules must actually be submodules."
+
+        if self.record_grandfather:
+            assert (
+                self.grandfather_filedir
+            ), "Cannot use `record_grandfather=True` without defining `grandfather_filedir`."
+
     def test_module(self):
         """
         Statically test whether the module imports respect the module boundary.
         """
+        self._validate_config()
 
         def _get_grandfathered_file(violation_type: str) -> Path:
             self.grandfather_filedir.mkdir(parents=True, exist_ok=True)
@@ -109,9 +119,7 @@ class ModuleImports:
             if violations:
                 raise ModuleImportViolation(violations)
         else:
-            assert (
-                self.grandfather_filedir
-            ), "Cannot use `record_grandfather=True` without defining `grandfather_filedir`"
+
             self._overwrite_grandfathered_violations(
                 internal_violations, _get_grandfathered_file("internal")
             )
