@@ -22,7 +22,7 @@ class TestReportBuilder(ModuleImports):
         with pytest.raises(borderline.ModuleImportViolation) as violation:
             super().test_module()
 
-        expected_violations = (
+        expected_violations = {
             (
                 Violation(
                     location="reporting.report_builder.__init__.py",
@@ -33,9 +33,9 @@ class TestReportBuilder(ModuleImports):
                     illegal_import="ImportFrom(module='reporting.review', names=[alias(name='this_is_a_violation', asname=None)], level=0)",
                 ),
                 Violation(
-                    location="reporting.api.py",
+                    location="reporting.review.api.py",
                     illegal_import="Import(names=[alias(name='reporting.report_builder.this_is_a_violation', asname=None)])",
                 ),
             ),
-        )
-        assert violation.value.args == expected_violations
+        }
+        assert set(violation.value.args) == expected_violations
