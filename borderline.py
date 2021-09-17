@@ -2,7 +2,6 @@ import ast
 import sys
 
 from pathlib import Path
-from types import ModuleType
 from typing import Tuple, Set, Union, NamedTuple, Optional
 
 VIOLATION_DELIMETER = "::"
@@ -75,7 +74,8 @@ class ModuleImports:
                 self.grandfather_filedir
             ), "Cannot use `record_grandfather=True` without defining `grandfather_filedir`."
 
-        # TODO: validate that multiple external paths do not violate directory structure assumptions
+        # TODO: validate that multiple external paths do not
+        # violate directory structure assumptions
 
     def test_module(self):
         """

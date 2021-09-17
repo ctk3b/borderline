@@ -21,10 +21,11 @@ jobs:
         python -m pip install --upgrade pip
         pip install poetry==${{env.POETRY_VERSION}}
         poetry install
-    - name: Test
-      run: |
-        poetry run pytest -v
     - name: Run lint
       run: |
         poetry run black borderline.py
         poetry run mypy borderline.py
+        poetry run flake8 --max-line-length 99 borderline.py
+    - name: Test
+      run: |
+        poetry run pytest -v
