@@ -3,7 +3,7 @@ from pathlib import Path
 import pytest
 
 import borderline
-from borderline import ModuleImports
+from borderline import ModuleImports, Violation
 
 
 class TestReportBuilder(ModuleImports):
@@ -23,19 +23,19 @@ class TestReportBuilder(ModuleImports):
             super().test_module()
 
         expected_violations = (
-            [
-                (
-                    "reporting.report_builder.__init__.py",
-                    "Import(names=[alias(name='reporting.review.this_is_a_violation', asname=None)])",
+            (
+                Violation(
+                    location="reporting.report_builder.__init__.py",
+                    illegal_import="Import(names=[alias(name='reporting.review.this_is_a_violation', asname=None)])",
                 ),
-                (
-                    "reporting.report_builder.api.py",
-                    "ImportFrom(module='reporting.review', names=[alias(name='this_is_a_violation', asname=None)], level=0)",
+                Violation(
+                    location="reporting.report_builder.api.py",
+                    illegal_import="ImportFrom(module='reporting.review', names=[alias(name='this_is_a_violation', asname=None)], level=0)",
                 ),
-                (
-                    "reporting.api.py",
-                    "Import(names=[alias(name='reporting.report_builder.this_is_a_violation', asname=None)])",
+                Violation(
+                    location="reporting.api.py",
+                    illegal_import="Import(names=[alias(name='reporting.report_builder.this_is_a_violation', asname=None)])",
                 ),
-            ],
+            ),
         )
         assert violation.value.args == expected_violations

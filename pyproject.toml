@@ -5,6 +5,12 @@ description = "Tests that new imports within a module respect the public API bou
 authors = ["Christoph Klein <ckleinemail@gmail.com>"]
 license = "MIT"
 homepage = "https://github.com/ctk3b/borderline"
+repository = "https://github.com/ctk3b/borderline"
+readme = "README.md"
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Topic :: Software Development :: Testing",
+]
 
 [tool.poetry.dependencies]
 python = ">=3.6.2,<4.0"
