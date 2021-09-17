@@ -32,6 +32,16 @@ class ModuleImports:
     To use, subclass this and define the boundaries of the module you are isolating.
 
     See README.md for example.
+
+    Notes
+    -----
+    `ast.dump` does not produce identical results across python versions. If you
+    are relying on grandfather files, you may need to regenerate them when updating
+    python versions.
+
+    Specifically, from python 3.8->3.9, `Import` and `ImportFrom` nodes no longer
+    `ast.dump` an `asname` attribute.
+
     """
 
     module: str
