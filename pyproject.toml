@@ -4,6 +4,7 @@ version = "0.1.0"
 description = "Tests that new imports within a module respect the public API boundary."
 authors = ["Christoph Klein <ckleinemail@gmail.com>"]
 license = "MIT"
+homepage = "https://github.com/ctk3b/borderline"
 
 [tool.poetry.dependencies]
 python = ">=3.6.2,<4.0"
