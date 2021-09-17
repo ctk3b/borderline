@@ -4,6 +4,8 @@ Stop letting modules reach into other modules.
 
 ---
 
+![python-package](https://github.com/ctk3b/borderline/actions/workflows/pythonpackage/badge.svg)
+
 This library provides one thing and one thing only: a test class called `TestModuleImports`. 
 
 To use the test, subclass it in the test suite of the module you want to isolate and define that module's borderlines.
