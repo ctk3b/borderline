@@ -97,7 +97,7 @@ class ModuleImports:
             self._check_modules(
                 modules=(self.module,),
                 banned_modules=self.external_modules,
-                allowed_modules=self.public_submodules + self.external_dependencies,
+                allowed_modules=self.external_dependencies,
                 grandfathered_violations=grandfathered_violations,
             )
         )
@@ -119,7 +119,6 @@ class ModuleImports:
             if violations:
                 raise ModuleImportViolation(violations)
         else:
-
             self._overwrite_grandfathered_violations(
                 internal_violations, _get_grandfathered_file("internal")
             )
