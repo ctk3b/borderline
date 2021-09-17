@@ -27,7 +27,6 @@ class TestReportBuilder(TestModuleImports):
     external_modules = (
         "reporting",
     )
-
     # Modules outside of `module` that ARE legitimate dependencies.
     external_dependencies = (
         "reporting.review.api",
