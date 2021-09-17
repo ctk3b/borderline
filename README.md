@@ -4,7 +4,7 @@ Stop letting modules reach into other modules.
 
 ---
 
-![python-package](https://github.com/ctk3b/borderline/actions/workflows/pythonpackage/badge.svg)
+![python-package](https://github.com/ctk3b/borderline/actions/workflows/python-package.yml/badge.svg)
 
 This library provides one thing and one thing only: a test class called `TestModuleImports`. 
 
