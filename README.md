@@ -20,7 +20,7 @@ class TestReportBuilder(ModuleImports):
     
     # The public API of the module.
     # External modules should only import from here.
-    public_modules = (
+    public_submodules = (
         "reporting.report_builder.api",
     )
     # Modules that are considered outside of `module` and should not be imported
