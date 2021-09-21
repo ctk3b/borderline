@@ -1,3 +1,5 @@
+import importlib
+
 import ast
 import sys
 
@@ -73,6 +75,9 @@ class ModuleImports:
             assert (
                 self.grandfather_filedir
             ), "Cannot use `record_grandfather=True` without defining `grandfather_filedir`."
+
+        for module in (self.module,) + self.public_submodules + self.external_modules + self.external_dependencies:
+            importlib.import_module(module)
 
         # TODO: validate that multiple external paths do not
         # violate directory structure assumptions
