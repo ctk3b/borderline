@@ -76,20 +76,27 @@ class ModuleImports:
                 self.grandfather_filedir
             ), "Cannot use `record_grandfather=True` without defining `grandfather_filedir`."
 
-        for module in (self.module,) + self.public_submodules + self.external_modules + self.external_dependencies:
+        # Ensure that all of the specified modules are importable and bring them into sys.modules
+        for module in (
+            (self.module,)
+            + self.public_submodules
+            + self.external_modules
+            + self.external_dependencies
+        ):
             importlib.import_module(module)
 
         # TODO: validate that multiple external paths do not
         # violate directory structure assumptions
 
     def test_module(self):
-        """Statically test whether the module imports respect the module boundary. """
+        """Statically test whether the module imports respect the module boundary."""
         self._validate_config()
         external_paths = [Path(sys.modules[mod].__path__[0]) for mod in self.external_modules]
         external_paths.sort(key=lambda x: len(x.parts))
         self.project_root = external_paths[0]
 
         def _get_grandfathered_file(violation_type: str) -> Path:
+            assert self.grandfather_filedir
             self.grandfather_filedir.mkdir(parents=True, exist_ok=True)
             return self.grandfather_filedir / f"{violation_type}_violations.txt"
 
@@ -151,7 +158,7 @@ class ModuleImports:
         allowed_modules: Tuple[str],
         grandfathered_violations: Set[str],
     ):
-        """Check a set of modules for borderline violations. """
+        """Check a set of modules for borderline violations."""
         for module_path in module_paths:
             yield from self._check_file(
                 module_path,
@@ -167,7 +174,7 @@ class ModuleImports:
         allowed_modules: Tuple[str],
         grandfathered_violations: Set[str],
     ):
-        """Check all imports within a file for borderline violations. """
+        """Check all imports within a file for borderline violations."""
         file_contents = filepath.read_bytes()
         tree = ast.parse(file_contents)
         for node in ast.walk(tree):
@@ -187,7 +194,7 @@ def _check_import(
     banned_modules: Tuple[str],
     allowed_modules: Tuple[str],
 ) -> Optional[Union[ast.Import, ast.ImportFrom]]:
-    """Check if an import violates the borderline. """
+    """Check if an import violates the borderline."""
     allowed = _import_is_within(import_node, allowed_modules)
     banned = _import_is_within(import_node, banned_modules)
     if not allowed and banned:
@@ -196,7 +203,7 @@ def _check_import(
 
 
 def _import_is_within(import_node: Union[ast.Import, ast.ImportFrom], modules: Tuple[str]) -> bool:
-    """Check if an import is within a specified list of modules. """
+    """Check if an import is within a specified list of modules."""
     if isinstance(import_node, ast.Import):
         for ast_alias in import_node.names:
             if not ast_alias.name.startswith(modules):
