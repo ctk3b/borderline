@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "borderline"
-version = "0.2.0"
+version = "0.3.0"
 description = "Tests that new imports within a module respect the public API boundary."
 authors = ["Christoph Klein <ckleinemail@gmail.com>"]
 license = "MIT"
