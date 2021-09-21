@@ -1,4 +1,5 @@
 import ast
+import importlib
 import sys
 
 from pathlib import Path
@@ -58,7 +59,7 @@ class ModuleImports:
     # Directory to store imports that are currently allowed.
     # This is useful when you are trying to isolate an existing module
     # that is not respecting its borderlines.
-    grandfather_filedir: Path
+    grandfather_filedir: Optional[Path] = None
     # Set to `True` when running the test in order to record a new list
     # of grandfathered imports.
     record_grandfather = False
@@ -74,19 +75,27 @@ class ModuleImports:
                 self.grandfather_filedir
             ), "Cannot use `record_grandfather=True` without defining `grandfather_filedir`."
 
+        # Ensure that all of the specified modules are importable and bring them into sys.modules
+        for module in (
+            (self.module,)
+            + self.public_submodules
+            + self.external_modules
+            + self.external_dependencies
+        ):
+            importlib.import_module(module)
+
         # TODO: validate that multiple external paths do not
         # violate directory structure assumptions
 
     def test_module(self):
-        """
-        Statically test whether the module imports respect the module boundary.
-        """
+        """Statically test whether the module imports respect the module boundary."""
         self._validate_config()
         external_paths = [Path(sys.modules[mod].__path__[0]) for mod in self.external_modules]
         external_paths.sort(key=lambda x: len(x.parts))
         self.project_root = external_paths[0]
 
         def _get_grandfathered_file(violation_type: str) -> Path:
+            assert self.grandfather_filedir
             self.grandfather_filedir.mkdir(parents=True, exist_ok=True)
             return self.grandfather_filedir / f"{violation_type}_violations.txt"
 
@@ -134,10 +143,10 @@ class ModuleImports:
             if violations:
                 raise ModuleImportViolation(violations)
         else:
-            self._overwrite_grandfathered_violations(
+            _overwrite_grandfathered_violations(
                 internal_violations, _get_grandfathered_file("internal")
             )
-            self._overwrite_grandfathered_violations(
+            _overwrite_grandfathered_violations(
                 external_violations, _get_grandfathered_file("external")
             )
 
@@ -148,6 +157,7 @@ class ModuleImports:
         allowed_modules: Tuple[str],
         grandfathered_violations: Set[str],
     ):
+        """Check a set of modules for borderline violations."""
         for module_path in module_paths:
             yield from self._check_file(
                 module_path,
@@ -163,11 +173,12 @@ class ModuleImports:
         allowed_modules: Tuple[str],
         grandfathered_violations: Set[str],
     ):
+        """Check all imports within a file for borderline violations."""
         file_contents = filepath.read_bytes()
         tree = ast.parse(file_contents)
         for node in ast.walk(tree):
             if isinstance(node, (ast.ImportFrom, ast.Import)):
-                illegal_import = self._check_import(node, banned_modules, allowed_modules)
+                illegal_import = _check_import(node, banned_modules, allowed_modules)
                 if illegal_import:
                     violation = Violation(
                         location=f"{filepath.relative_to(self.project_root)}",
@@ -176,47 +187,46 @@ class ModuleImports:
                     if violation not in grandfathered_violations:
                         yield violation
 
-    def _check_import(
-        self,
-        import_node: Union[ast.Import, ast.ImportFrom],
-        banned_modules: Tuple[str],
-        allowed_modules: Tuple[str],
-    ) -> Optional[Union[ast.Import, ast.ImportFrom]]:
-        allowed = self._node_is_within(import_node, allowed_modules)
-        banned = self._node_is_within(import_node, banned_modules)
-        if not allowed and banned:
-            return import_node
-        return None
 
-    @staticmethod
-    def _node_is_within(
-        import_node: Union[ast.Import, ast.ImportFrom], modules: Tuple[str]
-    ) -> bool:
-        if isinstance(import_node, ast.Import):
-            for ast_alias in import_node.names:
-                if not ast_alias.name.startswith(modules):
-                    return False
-            else:
-                return True
-        elif isinstance(import_node, ast.ImportFrom):
-            assert import_node.module
-            node_module_is_within = import_node.module.startswith(modules)
-            if node_module_is_within:
-                return True
+def _check_import(
+    import_node: Union[ast.Import, ast.ImportFrom],
+    banned_modules: Tuple[str],
+    allowed_modules: Tuple[str],
+) -> Optional[Union[ast.Import, ast.ImportFrom]]:
+    """Check if an import violates the borderline."""
+    allowed = _import_is_within(import_node, allowed_modules)
+    banned = _import_is_within(import_node, banned_modules)
+    if not allowed and banned:
+        return import_node
+    return None
 
-            for ast_alias in import_node.names:
-                if not f"{import_node.module}.{ast_alias.name}".startswith(modules):
-                    return False
-            else:
-                return True
+
+def _import_is_within(import_node: Union[ast.Import, ast.ImportFrom], modules: Tuple[str]) -> bool:
+    """Check if an import is within a specified list of modules."""
+    if isinstance(import_node, ast.Import):
+        for ast_alias in import_node.names:
+            if not ast_alias.name.startswith(modules):
+                return False
         else:
-            raise ValueError("Passed incorrect type for `import_node`")
+            return True
+    elif isinstance(import_node, ast.ImportFrom):
+        assert import_node.module
+        node_module_is_within = import_node.module.startswith(modules)
+        if node_module_is_within:
+            return True
 
-    @staticmethod
-    def _overwrite_grandfathered_violations(
-        violations: Tuple[Violation],
-        grandfather_file: Path,
-    ) -> None:
-        with open(grandfather_file, "w") as fh:
-            for violation in violations:
-                fh.write(f"{violation.serialize()}\n")
+        for ast_alias in import_node.names:
+            if not f"{import_node.module}.{ast_alias.name}".startswith(modules):
+                return False
+        else:
+            return True
+    else:
+        raise ValueError("Passed incorrect type for `import_node`")
+
+
+def _overwrite_grandfathered_violations(
+    violations: Tuple[Violation], grandfather_file: Path
+) -> None:
+    with open(grandfather_file, "w") as fh:
+        for violation in violations:
+            fh.write(f"{violation.serialize()}\n")
