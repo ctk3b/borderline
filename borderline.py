@@ -58,7 +58,7 @@ class ModuleImports:
     # Directory to store imports that are currently allowed.
     # This is useful when you are trying to isolate an existing module
     # that is not respecting its borderlines.
-    grandfather_filedir: Path
+    grandfather_filedir: Optional[Path] = None
     # Set to `True` when running the test in order to record a new list
     # of grandfathered imports.
     record_grandfather = False
