@@ -15,7 +15,7 @@ The test will fail if a module is not respecting those borderlines.
 For example, a module called `report_builder` could have the following definition:
 
 ```python
-class TestReportBuilder(TestModuleImports):
+class TestReportBuilder(ModuleImports):
     module = "reporting.report_builder"
     
     # The public API of the module.
