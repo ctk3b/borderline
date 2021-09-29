@@ -7,7 +7,7 @@ Stop letting modules reach into other modules.
 ![python-package](https://github.com/ctk3b/borderline/actions/workflows/python-package.yml/badge.svg)
 [![PyPI version fury.io](https://badge.fury.io/py/borderline.svg)](https://pypi.python.org/pypi/borderline/)
 
-This library provides one thing and one thing only: a test class called `ModuleImports`. 
+This library provides one thing and one thing only: a test class called `ModuleImports` 
 
 To use the test, subclass it in the test suite of the module you want to isolate and define that module's borderlines.
 The test will fail if a module is not respecting those borderlines.
@@ -15,7 +15,7 @@ The test will fail if a module is not respecting those borderlines.
 For example, a module called `report_builder` could have the following definition:
 
 ```python
-class TestReportBuilder(ModuleImports):
+class TestReportBuilder(borderline.ModuleImports):
     module = "reporting.report_builder"
     
     # The public API of the module.
